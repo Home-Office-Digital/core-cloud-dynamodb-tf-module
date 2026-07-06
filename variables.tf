@@ -12,11 +12,14 @@ variable "name" {
 
 variable "attributes" {
   description = "List of nested attribute definitions. Only required for hash_key and range_key attributes. Each attribute has two properties: name - (Required) The name of the attribute, type - (Required) Attribute type, which must be a scalar type: S, N, or B for (S)tring, (N)umber or (B)inary data"
-  type        = list(map(string))
-  default     = []
+  type = list(object({
+    name = string
+    type = string
+  }))
+  default = []
 
   validation {
-    condition     = alltrue([for attribute in var.attributes : contains(["S", "N", "B"], lookup(attribute, "type", ""))])
+    condition     = alltrue([for attribute in var.attributes : contains(["S", "N", "B"], attribute.type)])
     error_message = "All DynamoDB attribute types must be one of S, N, or B."
   }
 }
@@ -86,20 +89,72 @@ variable "ttl_attribute_name" {
 
 variable "global_secondary_indexes" {
   description = "Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc."
-  type        = any
-  default     = []
+  type = list(object({
+    name               = string
+    hash_key           = string
+    projection_type    = string
+    range_key          = optional(string, null)
+    read_capacity      = optional(number, null)
+    write_capacity     = optional(number, null)
+    non_key_attributes = optional(list(string), null)
+    on_demand_throughput = optional(object({
+      max_read_request_units  = optional(number, null)
+      max_write_request_units = optional(number, null)
+    }), null)
+  }))
+  default = []
+
+  validation {
+    condition     = alltrue([for index in var.global_secondary_indexes : contains(["ALL", "KEYS_ONLY", "INCLUDE"], index.projection_type)])
+    error_message = "All global secondary index projection_type values must be one of ALL, KEYS_ONLY, or INCLUDE."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.global_secondary_indexes : index.projection_type != "INCLUDE" || index.non_key_attributes != null])
+    error_message = "Global secondary indexes with projection_type INCLUDE must set non_key_attributes."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.global_secondary_indexes : index.read_capacity == null || index.read_capacity > 0])
+    error_message = "Global secondary index read_capacity must be greater than 0 when set."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.global_secondary_indexes : index.write_capacity == null || index.write_capacity > 0])
+    error_message = "Global secondary index write_capacity must be greater than 0 when set."
+  }
 }
 
 variable "local_secondary_indexes" {
   description = "Describe an LSI on the table; these can only be allocated at creation so you cannot change this definition after you have created the resource."
-  type        = any
-  default     = []
+  type = list(object({
+    name               = string
+    range_key          = string
+    projection_type    = string
+    non_key_attributes = optional(list(string), null)
+  }))
+  default = []
+
+  validation {
+    condition     = alltrue([for index in var.local_secondary_indexes : contains(["ALL", "KEYS_ONLY", "INCLUDE"], index.projection_type)])
+    error_message = "All local secondary index projection_type values must be one of ALL, KEYS_ONLY, or INCLUDE."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.local_secondary_indexes : index.projection_type != "INCLUDE" || index.non_key_attributes != null])
+    error_message = "Local secondary indexes with projection_type INCLUDE must set non_key_attributes."
+  }
 }
 
 variable "replica_regions" {
   description = "Region names for creating replicas for a global DynamoDB table."
-  type        = any
-  default     = []
+  type = list(object({
+    region_name            = string
+    kms_key_arn            = optional(string, null)
+    propagate_tags         = optional(bool, null)
+    point_in_time_recovery = optional(bool, null)
+  }))
+  default = []
 }
 
 variable "stream_enabled" {
@@ -216,8 +271,30 @@ variable "deletion_protection_enabled" {
 
 variable "import_table" {
   description = "Configurations for importing s3 data into a new table."
-  type        = any
-  default     = {}
+  type = object({
+    input_format           = string
+    input_compression_type = optional(string, null)
+    bucket                 = string
+    bucket_owner           = optional(string, null)
+    key_prefix             = optional(string, null)
+    input_format_options = optional(object({
+      csv = optional(object({
+        delimiter   = optional(string, null)
+        header_list = optional(list(string), null)
+      }), null)
+    }), null)
+  })
+  default = null
+
+  validation {
+    condition     = var.import_table == null || contains(["CSV", "DYNAMODB_JSON", "ION"], var.import_table.input_format)
+    error_message = "import_table.input_format must be one of CSV, DYNAMODB_JSON, or ION."
+  }
+
+  validation {
+    condition     = var.import_table == null || var.import_table.input_compression_type == null || contains(["GZIP", "ZSTD", "NONE"], var.import_table.input_compression_type)
+    error_message = "import_table.input_compression_type must be one of GZIP, ZSTD, or NONE when set."
+  }
 }
 
 variable "ignore_changes_global_secondary_index" {
@@ -228,8 +305,21 @@ variable "ignore_changes_global_secondary_index" {
 
 variable "on_demand_throughput" {
   description = "Sets the maximum number of read and write units for the specified on-demand table"
-  type        = any
-  default     = {}
+  type = object({
+    max_read_request_units  = optional(number, null)
+    max_write_request_units = optional(number, null)
+  })
+  default = null
+
+  validation {
+    condition     = var.on_demand_throughput == null || var.on_demand_throughput.max_read_request_units == null || var.on_demand_throughput.max_read_request_units > 0
+    error_message = "on_demand_throughput.max_read_request_units must be greater than 0 when set."
+  }
+
+  validation {
+    condition     = var.on_demand_throughput == null || var.on_demand_throughput.max_write_request_units == null || var.on_demand_throughput.max_write_request_units > 0
+    error_message = "on_demand_throughput.max_write_request_units must be greater than 0 when set."
+  }
 }
 
 variable "restore_date_time" {
