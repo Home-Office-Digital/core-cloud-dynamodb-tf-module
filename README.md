@@ -1,15 +1,67 @@
-# AWS DynamoDB Table Terraform module
+# Core Cloud DynamoDB Module
 
-Terraform module to create a DynamoDB table.
+This DynamoDB child module is written and maintained as part of the Core Cloud Terraform module set. It creates and manages DynamoDB tables, optional indexes, autoscaling configuration, resource policies, table import settings, replicas, streams, point-in-time recovery, and server-side encryption configuration.
+
+The repository includes Dependabot, Semantic Versioning workflows, Checkov scanning, and Sonarqube scanning. Repository ownership is defined in `CODEOWNERS`.
+
+## Module Structure
+
+<strong>---| .github</strong>
+&nbsp;&nbsp;&nbsp;&nbsp;<strong>---| [dependabot.yaml](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/.github/dependabot.yaml)</strong> - Checks repository dependencies and raises pull requests for review.  \
+&nbsp;&nbsp;&nbsp;&nbsp;<strong>---| workflows</strong> \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>---| [pull-request-semver-label-check.yaml](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/.github/workflows/pull-request-semver-label-check.yaml)</strong> - Verifies pull requests to main have an appropriate semver label: major, minor, or patch. \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>---| [pull-request-semver-tag-merge.yaml](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/.github/workflows/pull-request-semver-tag-merge.yaml)</strong> - Calculates and applies the semver tag when a pull request is merged. \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>---| [sast-scans.yaml](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/.github/workflows/sast-scans.yaml)</strong> - Runs Checkov and Sonarqube scans through Core Cloud shared workflows. \
+<strong>---| [CHANGELOG.md](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/CHANGELOG.md)</strong> - Contains significant changes associated with semver tags.  \
+<strong>---| [CODEOWNERS](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/CODEOWNERS)</strong> - Defines repository review ownership.  \
+<strong>---| [CODE_OF_CONDUCT.md](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/CODE_OF_CONDUCT.md)</strong>  \
+<strong>---| [CONTRIBUTING.md](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/CONTRIBUTING.md)</strong>  \
+<strong>---| [LICENSE](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/LICENSE)</strong>  \
+<strong>---| [README.md](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/README.md)</strong>  \
+<strong>---| [main.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/main.tf)</strong> - Contains the DynamoDB table resources and resource policy wiring.  \
+<strong>---| [autoscaling.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/autoscaling.tf)</strong> - Contains table and index autoscaling resources.  \
+<strong>---| [outputs.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/outputs.tf)</strong> - Contains output definitions for the module.  \
+<strong>---| [variables.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/variables.tf)</strong> - Contains module variable declarations.  \
+<strong>---| [versions.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/versions.tf)</strong> - Contains Terraform and provider constraints.  \
+<strong>---| examples</strong> - Contains runnable examples for basic, autoscaling, and S3 import usage.  \
+<strong>---| wrappers</strong> - Contains the retained wrapper module surface.
+
+## Validation
+
+Run the following commands before opening a pull request that changes Terraform code:
+
+```sh
+terraform fmt -recursive
+terraform init -backend=false
+terraform validate
+```
+
+For changes to examples, run `terraform init -backend=false` and `terraform validate` from each affected example directory.
+
+Run `terraform test` when Terraform native tests are present or when adding behavior covered by tests.
 
 ## Usage
 
+Recommended settings:
+
+- Adhere to Core Cloud mandatory tags.
+- Enable point-in-time recovery for production tables unless there is an approved exception.
+- Enable server-side encryption, and provide a customer managed KMS key when required by the workload.
+- Enable deletion protection for production tables unless lifecycle automation requires otherwise.
+- Use `PAY_PER_REQUEST` unless provisioned capacity and autoscaling are explicitly required.
+
+See the below example configuration:
+
 ```hcl
 module "dynamodb_table" {
-  source   = "terraform-aws-modules/dynamodb-table/aws"
+  source = "git::https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module.git?ref={tag}"
 
-  name     = "my-table"
-  hash_key = "id"
+  name                              = "my-table"
+  hash_key                          = "id"
+  table_class                       = "STANDARD"
+  point_in_time_recovery_enabled    = true
+  server_side_encryption_enabled    = true
+  deletion_protection_enabled       = true
 
   attributes = [
     {
@@ -19,8 +71,15 @@ module "dynamodb_table" {
   ]
 
   tags = {
-    Terraform   = "true"
-    Environment = "staging"
+    cost-centre      = "xxx"
+    account-code     = "xxx"
+    portfolio-id     = "xxx"
+    project-id       = "xxx"
+    service-id       = "xxx"
+    environment-type = "test"
+    owner-business   = "xxx"
+    budget-holder    = "xxx"
+    source-repo      = "xxx"
   }
 }
 ```
@@ -29,37 +88,33 @@ module "dynamodb_table" {
 
 **Warning: enabling or disabling autoscaling can cause your table to be recreated**
 
-There are two separate Terraform resources used for the DynamoDB table: one is for when any autoscaling is enabled the other when disabled. If your table is already created and then you change the variable `autoscaling_enabled` then your table will be recreated by Terraform. In this case you will need to move the old `aws_dynamodb_table` resource that is being `destroyed` to the new resource that is being `created`. For example:
+There are two separate Terraform resources used for the DynamoDB table: one is for when autoscaling is enabled and the other is for when autoscaling is disabled. If your table is already created and then you change `autoscaling_enabled`, Terraform can recreate the table unless you move state to the new resource address. For example:
 
-```
+```sh
 terraform state mv module.dynamodb_table.aws_dynamodb_table.this module.dynamodb_table.aws_dynamodb_table.autoscaled
 ```
 
 **Warning: autoscaling with global secondary indexes**
 
-When using an autoscaled provisioned table with GSIs you may find that applying TF changes whilst a GSI is scaled up will reset the capacity, there
-is an [open issue for this on the AWS Provider](https://github.com/hashicorp/terraform-provider-aws/issues/671). To get around this issue you can enable
-the `ignore_changes_global_secondary_index` setting however, using this setting means that any changes to GSIs will be ignored by Terraform and will
-hence have to be applied manually (or via some other automation).
+When using an autoscaled provisioned table with GSIs, applying Terraform changes while a GSI is scaled up can reset the capacity. There is an [open issue for this on the AWS Provider](https://github.com/hashicorp/terraform-provider-aws/issues/671). To work around this issue, you can enable `ignore_changes_global_secondary_index`; however, changes to GSIs will then be ignored by Terraform and must be applied manually or through separate automation.
 
-**NOTE**: Setting `ignore_changes_global_secondary_index` after the table is already created causes your table to be recreated. In this case, you will
-need to move the old `aws_dynamodb_table` resource that is being `destroyed` to the new resource that is being `created`. For example:
+Setting `ignore_changes_global_secondary_index` after the table is created can also cause the table resource address to change. Move state before applying where appropriate:
 
-```
+```sh
 terraform state mv module.dynamodb_table.aws_dynamodb_table.autoscaled module.dynamodb_table.aws_dynamodb_table.autoscaled_ignore_gsi
 ```
 
-## Module wrappers
+## Module Wrappers
 
-Users of this Terraform module can create multiple similar resources by using [`for_each` meta-argument within `module` block](https://www.terraform.io/language/meta-arguments/for_each) which became available in Terraform 0.13.
+Users of this Terraform module can create multiple similar resources by using the [`for_each` meta-argument within a module block](https://www.terraform.io/language/meta-arguments/for_each).
 
-Users of Terragrunt can achieve similar results by using modules provided in the [wrappers](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/master/wrappers) directory, if they prefer to reduce amount of configuration files.
+The `wrappers/` directory is retained for consumers that need the wrapper module pattern, such as Terragrunt-based consumers.
 
 ## Examples
 
-- [Basic example](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/master/examples/basic)
-- [Autoscaling example](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/master/examples/autoscaling)
-- [S3 import examples](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/master/examples/s3-import)
+- [Basic example](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/tree/main/examples/basic)
+- [Autoscaling example](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/tree/main/examples/autoscaling)
+- [S3 import example](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/tree/main/examples/s3-import)
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -148,10 +203,10 @@ No modules.
 | <a name="output_dynamodb_table_stream_label"></a> [dynamodb\_table\_stream\_label](#output\_dynamodb\_table\_stream\_label) | A timestamp, in ISO 8601 format of the Table Stream. Only available when var.stream\_enabled is true |
 <!-- END_TF_DOCS -->
 
-## Authors
+## Attribution
 
-This module has initially been cut from (https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/v4.2.0). The original module is maintained by [Anton Babenko](https://github.com/antonbabenko) with help from [these awesome contributors](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/graphs/contributors).
+This module was initially cut from [terraform-aws-modules/terraform-aws-dynamodb-table](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/v4.2.0). It is now maintained as part of the Core Cloud Terraform module set.
 
 ## License
 
-Apache 2 Licensed. See [LICENSE](https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/tree/master/LICENSE) for full details.
+Apache 2 Licensed. See [LICENSE](LICENSE) for full details.
