@@ -51,8 +51,16 @@ module "dynamodb_table" {
   }
 
   tags = {
-    Terraform   = "true"
-    Environment = "staging"
+    account-code     = "example"
+    budget-holder    = "example"
+    cost-centre      = "example"
+    environment-type = "test"
+    hosting-platform = "test-platform"
+    owner-business   = "example"
+    portfolio-id     = "example"
+    project-id       = "example"
+    service-id       = "example"
+    source-repo      = "core-cloud-dynamodb-tf-module"
   }
 }
 
@@ -61,4 +69,17 @@ module "disabled_dynamodb_table" {
   source = "../../"
 
   create_table = false
+
+  tags = {
+    account-code     = "example"
+    budget-holder    = "example"
+    cost-centre      = "example"
+    environment-type = "test"
+    hosting-platform = "test-platform"
+    owner-business   = "example"
+    portfolio-id     = "example"
+    project-id       = "example"
+    service-id       = "example"
+    source-repo      = "core-cloud-dynamodb-tf-module"
+  }
 }

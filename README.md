@@ -77,6 +77,7 @@ module "dynamodb_table" {
     project-id       = "xxx"
     service-id       = "xxx"
     environment-type = "test"
+    hosting-platform = "test-platform"
     owner-business   = "xxx"
     budget-holder    = "xxx"
     source-repo      = "xxx"

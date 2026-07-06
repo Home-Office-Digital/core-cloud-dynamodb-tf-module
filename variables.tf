@@ -14,6 +14,11 @@ variable "attributes" {
   description = "List of nested attribute definitions. Only required for hash_key and range_key attributes. Each attribute has two properties: name - (Required) The name of the attribute, type - (Required) Attribute type, which must be a scalar type: S, N, or B for (S)tring, (N)umber or (B)inary data"
   type        = list(map(string))
   default     = []
+
+  validation {
+    condition     = alltrue([for attribute in var.attributes : contains(["S", "N", "B"], lookup(attribute, "type", ""))])
+    error_message = "All DynamoDB attribute types must be one of S, N, or B."
+  }
 }
 
 variable "hash_key" {
@@ -32,18 +37,33 @@ variable "billing_mode" {
   description = "Controls how you are billed for read/write throughput and how you manage capacity. The valid values are PROVISIONED or PAY_PER_REQUEST"
   type        = string
   default     = "PAY_PER_REQUEST"
+
+  validation {
+    condition     = contains(["PROVISIONED", "PAY_PER_REQUEST"], var.billing_mode)
+    error_message = "billing_mode must be either PROVISIONED or PAY_PER_REQUEST."
+  }
 }
 
 variable "write_capacity" {
   description = "The number of write units for this table. If the billing_mode is PROVISIONED, this field should be greater than 0"
   type        = number
   default     = null
+
+  validation {
+    condition     = var.write_capacity == null || var.write_capacity > 0
+    error_message = "write_capacity must be greater than 0 when set."
+  }
 }
 
 variable "read_capacity" {
   description = "The number of read units for this table. If the billing_mode is PROVISIONED, this field should be greater than 0"
   type        = number
   default     = null
+
+  validation {
+    condition     = var.read_capacity == null || var.read_capacity > 0
+    error_message = "read_capacity must be greater than 0 when set."
+  }
 }
 
 variable "point_in_time_recovery_enabled" {
@@ -92,6 +112,11 @@ variable "stream_view_type" {
   description = "When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.stream_view_type == null || contains(["KEYS_ONLY", "NEW_IMAGE", "OLD_IMAGE", "NEW_AND_OLD_IMAGES"], var.stream_view_type)
+    error_message = "stream_view_type must be one of KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, or NEW_AND_OLD_IMAGES when set."
+  }
 }
 
 variable "server_side_encryption_enabled" {
@@ -107,9 +132,25 @@ variable "server_side_encryption_kms_key_arn" {
 }
 
 variable "tags" {
-  description = "A map of tags to add to all resources"
+  description = "A map of tags to add to all resources. Must include Core Cloud mandatory tags."
   type        = map(string)
   default     = {}
+
+  validation {
+    condition = alltrue([
+      contains(keys(var.tags), "account-code"),
+      contains(keys(var.tags), "cost-centre"),
+      contains(keys(var.tags), "portfolio-id"),
+      contains(keys(var.tags), "project-id"),
+      contains(keys(var.tags), "service-id"),
+      contains(keys(var.tags), "environment-type"),
+      contains(keys(var.tags), "owner-business"),
+      contains(keys(var.tags), "budget-holder"),
+      contains(keys(var.tags), "source-repo"),
+      contains(keys(var.tags), "hosting-platform")
+    ])
+    error_message = "Tags must include all mandatory fields: account-code, cost-centre, portfolio-id, project-id, service-id, environment-type, owner-business, budget-holder, source-repo, and hosting-platform."
+  }
 }
 
 variable "timeouts" {
@@ -160,6 +201,11 @@ variable "table_class" {
   description = "The storage class of the table. Valid values are STANDARD and STANDARD_INFREQUENT_ACCESS"
   type        = string
   default     = null
+
+  validation {
+    condition     = var.table_class == null || contains(["STANDARD", "STANDARD_INFREQUENT_ACCESS"], var.table_class)
+    error_message = "table_class must be either STANDARD or STANDARD_INFREQUENT_ACCESS when set."
+  }
 }
 
 variable "deletion_protection_enabled" {

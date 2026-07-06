@@ -19,8 +19,16 @@ inputs = {
   defaults = { # Default values
     create_table = true
     tags = {
-      Terraform   = "true"
-      Environment = "dev"
+      account-code     = "example"
+      budget-holder    = "example"
+      cost-centre      = "example"
+      environment-type = "test"
+      hosting-platform = "test-platform"
+      owner-business   = "example"
+      portfolio-id     = "example"
+      project-id       = "example"
+      service-id       = "example"
+      source-repo      = "core-cloud-dynamodb-tf-module"
     }
   }
 
@@ -45,8 +53,16 @@ module "wrapper" {
   defaults = { # Default values
     create_table = true
     tags = {
-      Terraform   = "true"
-      Environment = "dev"
+      account-code     = "example"
+      budget-holder    = "example"
+      cost-centre      = "example"
+      environment-type = "test"
+      hosting-platform = "test-platform"
+      owner-business   = "example"
+      portfolio-id     = "example"
+      project-id       = "example"
+      service-id       = "example"
+      source-repo      = "core-cloud-dynamodb-tf-module"
     }
   }
 

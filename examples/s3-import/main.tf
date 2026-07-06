@@ -34,8 +34,16 @@ module "import_json_table" {
   }
 
   tags = {
-    Terraform   = "true"
-    Environment = "staging"
+    account-code     = "example"
+    budget-holder    = "example"
+    cost-centre      = "example"
+    environment-type = "test"
+    hosting-platform = "test-platform"
+    owner-business   = "example"
+    portfolio-id     = "example"
+    project-id       = "example"
+    service-id       = "example"
+    source-repo      = "core-cloud-dynamodb-tf-module"
   }
 }
 
@@ -72,8 +80,16 @@ module "import_csv_table" {
   }
 
   tags = {
-    Terraform   = "true"
-    Environment = "staging"
+    account-code     = "example"
+    budget-holder    = "example"
+    cost-centre      = "example"
+    environment-type = "test"
+    hosting-platform = "test-platform"
+    owner-business   = "example"
+    portfolio-id     = "example"
+    project-id       = "example"
+    service-id       = "example"
+    source-repo      = "core-cloud-dynamodb-tf-module"
   }
 }
 
