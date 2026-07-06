@@ -226,30 +226,127 @@ variable "autoscaling_enabled" {
 
 variable "autoscaling_defaults" {
   description = "A map of default autoscaling settings"
-  type        = map(string)
+  type = object({
+    scale_in_cooldown  = optional(number, 0)
+    scale_out_cooldown = optional(number, 0)
+    target_value       = optional(number, 70)
+  })
   default = {
     scale_in_cooldown  = 0
     scale_out_cooldown = 0
     target_value       = 70
   }
+
+  validation {
+    condition     = var.autoscaling_defaults.scale_in_cooldown >= 0 && var.autoscaling_defaults.scale_out_cooldown >= 0
+    error_message = "autoscaling_defaults cooldown values must be greater than or equal to 0."
+  }
+
+  validation {
+    condition     = var.autoscaling_defaults.target_value > 0
+    error_message = "autoscaling_defaults.target_value must be greater than 0."
+  }
 }
 
 variable "autoscaling_read" {
   description = "A map of read autoscaling settings. `max_capacity` is the only required key. See example in examples/autoscaling"
-  type        = map(string)
-  default     = {}
+  type = object({
+    max_capacity       = number
+    scale_in_cooldown  = optional(number, null)
+    scale_out_cooldown = optional(number, null)
+    target_value       = optional(number, null)
+  })
+  default = null
+
+  validation {
+    condition     = var.autoscaling_read == null || var.autoscaling_read.max_capacity > 0
+    error_message = "autoscaling_read.max_capacity must be greater than 0."
+  }
+
+  validation {
+    condition     = var.autoscaling_read == null || var.autoscaling_read.scale_in_cooldown == null || var.autoscaling_read.scale_in_cooldown >= 0
+    error_message = "autoscaling_read.scale_in_cooldown must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = var.autoscaling_read == null || var.autoscaling_read.scale_out_cooldown == null || var.autoscaling_read.scale_out_cooldown >= 0
+    error_message = "autoscaling_read.scale_out_cooldown must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = var.autoscaling_read == null || var.autoscaling_read.target_value == null || var.autoscaling_read.target_value > 0
+    error_message = "autoscaling_read.target_value must be greater than 0 when set."
+  }
 }
 
 variable "autoscaling_write" {
   description = "A map of write autoscaling settings. `max_capacity` is the only required key. See example in examples/autoscaling"
-  type        = map(string)
-  default     = {}
+  type = object({
+    max_capacity       = number
+    scale_in_cooldown  = optional(number, null)
+    scale_out_cooldown = optional(number, null)
+    target_value       = optional(number, null)
+  })
+  default = null
+
+  validation {
+    condition     = var.autoscaling_write == null || var.autoscaling_write.max_capacity > 0
+    error_message = "autoscaling_write.max_capacity must be greater than 0."
+  }
+
+  validation {
+    condition     = var.autoscaling_write == null || var.autoscaling_write.scale_in_cooldown == null || var.autoscaling_write.scale_in_cooldown >= 0
+    error_message = "autoscaling_write.scale_in_cooldown must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = var.autoscaling_write == null || var.autoscaling_write.scale_out_cooldown == null || var.autoscaling_write.scale_out_cooldown >= 0
+    error_message = "autoscaling_write.scale_out_cooldown must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = var.autoscaling_write == null || var.autoscaling_write.target_value == null || var.autoscaling_write.target_value > 0
+    error_message = "autoscaling_write.target_value must be greater than 0 when set."
+  }
 }
 
 variable "autoscaling_indexes" {
   description = "A map of index autoscaling configurations. See example in examples/autoscaling"
-  type        = map(map(string))
-  default     = {}
+  type = map(object({
+    read_max_capacity  = number
+    read_min_capacity  = number
+    write_max_capacity = number
+    write_min_capacity = number
+    scale_in_cooldown  = optional(number, null)
+    scale_out_cooldown = optional(number, null)
+    target_value       = optional(number, null)
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for index in var.autoscaling_indexes : index.read_min_capacity > 0 && index.read_max_capacity > 0 && index.write_min_capacity > 0 && index.write_max_capacity > 0])
+    error_message = "autoscaling_indexes capacity values must be greater than 0."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.autoscaling_indexes : index.read_min_capacity <= index.read_max_capacity && index.write_min_capacity <= index.write_max_capacity])
+    error_message = "autoscaling_indexes min capacity values must be less than or equal to max capacity values."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.autoscaling_indexes : index.scale_in_cooldown == null || index.scale_in_cooldown >= 0])
+    error_message = "autoscaling_indexes scale_in_cooldown values must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.autoscaling_indexes : index.scale_out_cooldown == null || index.scale_out_cooldown >= 0])
+    error_message = "autoscaling_indexes scale_out_cooldown values must be greater than or equal to 0 when set."
+  }
+
+  validation {
+    condition     = alltrue([for index in var.autoscaling_indexes : index.target_value == null || index.target_value > 0])
+    error_message = "autoscaling_indexes target_value values must be greater than 0 when set."
+  }
 }
 
 variable "table_class" {
