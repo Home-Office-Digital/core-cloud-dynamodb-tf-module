@@ -115,12 +115,12 @@ variable "global_secondary_indexes" {
   }
 
   validation {
-    condition     = alltrue([for index in var.global_secondary_indexes : index.read_capacity == null || index.read_capacity > 0])
+    condition     = alltrue([for index in var.global_secondary_indexes : try(index.read_capacity == null || index.read_capacity > 0, true)])
     error_message = "Global secondary index read_capacity must be greater than 0 when set."
   }
 
   validation {
-    condition     = alltrue([for index in var.global_secondary_indexes : index.write_capacity == null || index.write_capacity > 0])
+    condition     = alltrue([for index in var.global_secondary_indexes : try(index.write_capacity == null || index.write_capacity > 0, true)])
     error_message = "Global secondary index write_capacity must be greater than 0 when set."
   }
 }
