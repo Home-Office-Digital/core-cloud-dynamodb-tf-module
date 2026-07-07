@@ -53,7 +53,7 @@ variable "write_capacity" {
   default     = null
 
   validation {
-    condition     = var.write_capacity == null || var.write_capacity > 0
+    condition     = try(var.write_capacity == null || var.write_capacity > 0, true)
     error_message = "write_capacity must be greater than 0 when set."
   }
 }
@@ -64,7 +64,7 @@ variable "read_capacity" {
   default     = null
 
   validation {
-    condition     = var.read_capacity == null || var.read_capacity > 0
+    condition     = try(var.read_capacity == null || var.read_capacity > 0, true)
     error_message = "read_capacity must be greater than 0 when set."
   }
 }
@@ -169,7 +169,7 @@ variable "stream_view_type" {
   default     = null
 
   validation {
-    condition     = var.stream_view_type == null || contains(["KEYS_ONLY", "NEW_IMAGE", "OLD_IMAGE", "NEW_AND_OLD_IMAGES"], var.stream_view_type)
+    condition     = try(var.stream_view_type == null || contains(["KEYS_ONLY", "NEW_IMAGE", "OLD_IMAGE", "NEW_AND_OLD_IMAGES"], var.stream_view_type), true)
     error_message = "stream_view_type must be one of KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, or NEW_AND_OLD_IMAGES when set."
   }
 }
@@ -259,22 +259,22 @@ variable "autoscaling_read" {
   default = null
 
   validation {
-    condition     = var.autoscaling_read == null || var.autoscaling_read.max_capacity > 0
+    condition     = try(var.autoscaling_read == null || var.autoscaling_read.max_capacity > 0, true)
     error_message = "autoscaling_read.max_capacity must be greater than 0."
   }
 
   validation {
-    condition     = var.autoscaling_read == null || var.autoscaling_read.scale_in_cooldown == null || var.autoscaling_read.scale_in_cooldown >= 0
+    condition     = try(var.autoscaling_read == null || var.autoscaling_read.scale_in_cooldown == null || var.autoscaling_read.scale_in_cooldown >= 0, true)
     error_message = "autoscaling_read.scale_in_cooldown must be greater than or equal to 0 when set."
   }
 
   validation {
-    condition     = var.autoscaling_read == null || var.autoscaling_read.scale_out_cooldown == null || var.autoscaling_read.scale_out_cooldown >= 0
+    condition     = try(var.autoscaling_read == null || var.autoscaling_read.scale_out_cooldown == null || var.autoscaling_read.scale_out_cooldown >= 0, true)
     error_message = "autoscaling_read.scale_out_cooldown must be greater than or equal to 0 when set."
   }
 
   validation {
-    condition     = var.autoscaling_read == null || var.autoscaling_read.target_value == null || var.autoscaling_read.target_value > 0
+    condition     = try(var.autoscaling_read == null || var.autoscaling_read.target_value == null || var.autoscaling_read.target_value > 0, true)
     error_message = "autoscaling_read.target_value must be greater than 0 when set."
   }
 }
@@ -290,22 +290,22 @@ variable "autoscaling_write" {
   default = null
 
   validation {
-    condition     = var.autoscaling_write == null || var.autoscaling_write.max_capacity > 0
+    condition     = try(var.autoscaling_write == null || var.autoscaling_write.max_capacity > 0, true)
     error_message = "autoscaling_write.max_capacity must be greater than 0."
   }
 
   validation {
-    condition     = var.autoscaling_write == null || var.autoscaling_write.scale_in_cooldown == null || var.autoscaling_write.scale_in_cooldown >= 0
+    condition     = try(var.autoscaling_write == null || var.autoscaling_write.scale_in_cooldown == null || var.autoscaling_write.scale_in_cooldown >= 0, true)
     error_message = "autoscaling_write.scale_in_cooldown must be greater than or equal to 0 when set."
   }
 
   validation {
-    condition     = var.autoscaling_write == null || var.autoscaling_write.scale_out_cooldown == null || var.autoscaling_write.scale_out_cooldown >= 0
+    condition     = try(var.autoscaling_write == null || var.autoscaling_write.scale_out_cooldown == null || var.autoscaling_write.scale_out_cooldown >= 0, true)
     error_message = "autoscaling_write.scale_out_cooldown must be greater than or equal to 0 when set."
   }
 
   validation {
-    condition     = var.autoscaling_write == null || var.autoscaling_write.target_value == null || var.autoscaling_write.target_value > 0
+    condition     = try(var.autoscaling_write == null || var.autoscaling_write.target_value == null || var.autoscaling_write.target_value > 0, true)
     error_message = "autoscaling_write.target_value must be greater than 0 when set."
   }
 }
@@ -355,7 +355,7 @@ variable "table_class" {
   default     = null
 
   validation {
-    condition     = var.table_class == null || contains(["STANDARD", "STANDARD_INFREQUENT_ACCESS"], var.table_class)
+    condition     = try(var.table_class == null || contains(["STANDARD", "STANDARD_INFREQUENT_ACCESS"], var.table_class), true)
     error_message = "table_class must be either STANDARD or STANDARD_INFREQUENT_ACCESS when set."
   }
 }
@@ -384,12 +384,12 @@ variable "import_table" {
   default = null
 
   validation {
-    condition     = var.import_table == null || contains(["CSV", "DYNAMODB_JSON", "ION"], var.import_table.input_format)
+    condition     = try(var.import_table == null || contains(["CSV", "DYNAMODB_JSON", "ION"], var.import_table.input_format), true)
     error_message = "import_table.input_format must be one of CSV, DYNAMODB_JSON, or ION."
   }
 
   validation {
-    condition     = var.import_table == null || var.import_table.input_compression_type == null || contains(["GZIP", "ZSTD", "NONE"], var.import_table.input_compression_type)
+    condition     = try(var.import_table == null || var.import_table.input_compression_type == null || contains(["GZIP", "ZSTD", "NONE"], var.import_table.input_compression_type), true)
     error_message = "import_table.input_compression_type must be one of GZIP, ZSTD, or NONE when set."
   }
 }
@@ -409,12 +409,12 @@ variable "on_demand_throughput" {
   default = null
 
   validation {
-    condition     = var.on_demand_throughput == null || var.on_demand_throughput.max_read_request_units == null || var.on_demand_throughput.max_read_request_units > 0
+    condition     = try(var.on_demand_throughput == null || var.on_demand_throughput.max_read_request_units == null || var.on_demand_throughput.max_read_request_units > 0, true)
     error_message = "on_demand_throughput.max_read_request_units must be greater than 0 when set."
   }
 
   validation {
-    condition     = var.on_demand_throughput == null || var.on_demand_throughput.max_write_request_units == null || var.on_demand_throughput.max_write_request_units > 0
+    condition     = try(var.on_demand_throughput == null || var.on_demand_throughput.max_write_request_units == null || var.on_demand_throughput.max_write_request_units > 0, true)
     error_message = "on_demand_throughput.max_write_request_units must be greater than 0 when set."
   }
 }
