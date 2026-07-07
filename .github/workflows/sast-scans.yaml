@@ -11,22 +11,50 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
-  id-token: write
   actions: read
   security-events: write
+  id-token: write
 
 jobs:
+  RunTerraformValidation:
+    name: Run Terraform Validation
+    runs-on: ubuntu-latest
+    env:
+      TF_INPUT: "false"
+
+    steps:
+      - name: Clone the Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.9.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init (no backend)
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Test
+        run: terraform test -no-color
+
+      - name: TFLint
+        uses: Home-Office-Digital/core-cloud-workflow-tflint-scan@main
+
   checkov-scan:
-    uses: UKHomeOffice/core-cloud-workflow-checkov-sast-scan/.github/workflows/checkov-scan-base.yaml@1.11.1
+    uses: Home-Office-Digital/core-cloud-workflow-checkov-sast-scan/.github/workflows/checkov-scan-base.yaml@1.18.0
     with:
       path: '.'
   sonarqube-scanner:
-    uses: UKHomeOffice/core-cloud-workflow-sonarqube-scan/.github/workflows/sonarqube-scan.yaml@1.1.4
+    uses: Home-Office-Digital/core-cloud-workflow-sonarqube-scan/.github/workflows/sonarqube-scan.yaml@1.1.8
     secrets:
       sonar_token: ${{ secrets.sonar_token }}
       sonar_host_url: ${{ secrets.sonar_host_url }}

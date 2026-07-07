@@ -12,15 +12,15 @@ $ terraform plan
 $ terraform apply
 ```
 
-Note that this example may create resources which can cost money (AWS Elastic IP, for example). Run `terraform destroy` when you don't need these resources.
+Note that this example may create resources which can cost money. Run `terraform destroy` when you don't need these resources.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.72.1 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.7.5 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.88.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 2.0 |
 
 ## Providers

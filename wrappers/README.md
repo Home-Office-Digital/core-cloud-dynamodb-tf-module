@@ -1,8 +1,8 @@
-# Wrapper for the root module
+# Wrapper for the Core Cloud DynamoDB module
 
-The configuration in this directory contains an implementation of a single module wrapper pattern, which allows managing several copies of a module in places where using the native Terraform 0.13+ `for_each` feature is not feasible (e.g., with Terragrunt).
+The configuration in this directory contains a supported compatibility wrapper for the root DynamoDB module. It allows consumers to manage several DynamoDB tables from a single module call by passing an `items` map.
 
-You may want to use a single Terragrunt configuration file to manage multiple resources without duplicating `terragrunt.hcl` files for each copy of the same module.
+For new Terraform configurations, prefer using native Terraform `for_each` on the root module where possible. Use this wrapper when the calling workflow benefits from a single wrapper module, such as Terragrunt configurations that manage multiple resources from one `terragrunt.hcl` file.
 
 This wrapper does not implement any extra functionality.
 
@@ -12,17 +12,23 @@ This wrapper does not implement any extra functionality.
 
 ```hcl
 terraform {
-  source = "tfr:///terraform-aws-modules/dynamodb-table/aws//wrappers"
-  # Alternative source:
-  # source = "git::git@github.com:terraform-aws-modules/terraform-aws-dynamodb-table.git//wrappers?ref=master"
+  source = "git::https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module.git//wrappers?ref={tag}"
 }
 
 inputs = {
   defaults = { # Default values
-    create = true
+    create_table = true
     tags = {
-      Terraform   = "true"
-      Environment = "dev"
+      account-code     = "example"
+      budget-holder    = "example"
+      cost-centre      = "example"
+      environment-type = "test"
+      hosting-platform = "test-platform"
+      owner-business   = "example"
+      portfolio-id     = "example"
+      project-id       = "example"
+      service-id       = "example"
+      source-repo      = "core-cloud-dynamodb-tf-module"
     }
   }
 
@@ -42,13 +48,21 @@ inputs = {
 
 ```hcl
 module "wrapper" {
-  source = "terraform-aws-modules/dynamodb-table/aws//wrappers"
+  source = "git::https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module.git//wrappers?ref={tag}"
 
   defaults = { # Default values
-    create = true
+    create_table = true
     tags = {
-      Terraform   = "true"
-      Environment = "dev"
+      account-code     = "example"
+      budget-holder    = "example"
+      cost-centre      = "example"
+      environment-type = "test"
+      hosting-platform = "test-platform"
+      owner-business   = "example"
+      portfolio-id     = "example"
+      project-id       = "example"
+      service-id       = "example"
+      source-repo      = "core-cloud-dynamodb-tf-module"
     }
   }
 
@@ -60,41 +74,6 @@ module "wrapper" {
       # omitted... can be any argument supported by the module
     }
     # omitted...
-  }
-}
-```
-
-## Example: Manage multiple S3 buckets in one Terragrunt layer
-
-`eu-west-1/s3-buckets/terragrunt.hcl`:
-
-```hcl
-terraform {
-  source = "tfr:///terraform-aws-modules/s3-bucket/aws//wrappers"
-  # Alternative source:
-  # source = "git::git@github.com:terraform-aws-modules/terraform-aws-s3-bucket.git//wrappers?ref=master"
-}
-
-inputs = {
-  defaults = {
-    force_destroy = true
-
-    attach_elb_log_delivery_policy        = true
-    attach_lb_log_delivery_policy         = true
-    attach_deny_insecure_transport_policy = true
-    attach_require_latest_tls_policy      = true
-  }
-
-  items = {
-    bucket1 = {
-      bucket = "my-random-bucket-1"
-    }
-    bucket2 = {
-      bucket = "my-random-bucket-2"
-      tags = {
-        Secure = "probably"
-      }
-    }
   }
 }
 ```

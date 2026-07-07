@@ -58,7 +58,7 @@ resource "aws_dynamodb_table" "this" {
       non_key_attributes = lookup(global_secondary_index.value, "non_key_attributes", null)
 
       dynamic "on_demand_throughput" {
-        for_each = try([global_secondary_index.value.on_demand_throughput], [])
+        for_each = global_secondary_index.value.on_demand_throughput != null ? [global_secondary_index.value.on_demand_throughput] : []
 
         content {
           max_read_request_units  = try(on_demand_throughput.value.max_read_request_units, null)
@@ -85,19 +85,19 @@ resource "aws_dynamodb_table" "this" {
   }
 
   dynamic "import_table" {
-    for_each = length(var.import_table) > 0 ? [var.import_table] : []
+    for_each = var.import_table != null ? [var.import_table] : []
 
     content {
       input_format           = import_table.value.input_format
       input_compression_type = try(import_table.value.input_compression_type, null)
 
       dynamic "input_format_options" {
-        for_each = try([import_table.value.input_format_options], [])
+        for_each = import_table.value.input_format_options != null ? [import_table.value.input_format_options] : []
 
         content {
 
           dynamic "csv" {
-            for_each = try([input_format_options.value.csv], [])
+            for_each = input_format_options.value.csv != null ? [input_format_options.value.csv] : []
 
             content {
               delimiter   = try(csv.value.delimiter, null)
@@ -116,7 +116,7 @@ resource "aws_dynamodb_table" "this" {
   }
 
   dynamic "on_demand_throughput" {
-    for_each = length(var.on_demand_throughput) > 0 ? [var.on_demand_throughput] : []
+    for_each = var.on_demand_throughput != null ? [var.on_demand_throughput] : []
 
     content {
       max_read_request_units  = try(on_demand_throughput.value.max_read_request_units, null)
@@ -136,10 +136,17 @@ resource "aws_dynamodb_table" "this" {
     delete = lookup(var.timeouts, "delete", null)
     update = lookup(var.timeouts, "update", null)
   }
+
+  lifecycle {
+    precondition {
+      condition     = var.billing_mode != "PROVISIONED" || alltrue([for index in var.global_secondary_indexes : index.read_capacity != null && index.write_capacity != null])
+      error_message = "global_secondary_indexes must set read_capacity and write_capacity when billing_mode is PROVISIONED."
+    }
+  }
 }
 
 resource "aws_dynamodb_resource_policy" "this" {
-  count        = var.create_table && !var.autoscaling_enabled && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && !var.autoscaling_enabled && try(length(var.dynamodb_resource_policy), 0) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.this[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
@@ -204,7 +211,7 @@ resource "aws_dynamodb_table" "autoscaled" {
       non_key_attributes = lookup(global_secondary_index.value, "non_key_attributes", null)
 
       dynamic "on_demand_throughput" {
-        for_each = try([global_secondary_index.value.on_demand_throughput], [])
+        for_each = global_secondary_index.value.on_demand_throughput != null ? [global_secondary_index.value.on_demand_throughput] : []
 
         content {
           max_read_request_units  = try(on_demand_throughput.value.max_read_request_units, null)
@@ -231,19 +238,19 @@ resource "aws_dynamodb_table" "autoscaled" {
   }
 
   dynamic "import_table" {
-    for_each = length(var.import_table) > 0 ? [var.import_table] : []
+    for_each = var.import_table != null ? [var.import_table] : []
 
     content {
       input_format           = import_table.value.input_format
       input_compression_type = try(import_table.value.input_compression_type, null)
 
       dynamic "input_format_options" {
-        for_each = try([import_table.value.input_format_options], [])
+        for_each = import_table.value.input_format_options != null ? [import_table.value.input_format_options] : []
 
         content {
 
           dynamic "csv" {
-            for_each = try([input_format_options.value.csv], [])
+            for_each = input_format_options.value.csv != null ? [input_format_options.value.csv] : []
 
             content {
               delimiter   = try(csv.value.delimiter, null)
@@ -262,7 +269,7 @@ resource "aws_dynamodb_table" "autoscaled" {
   }
 
   dynamic "on_demand_throughput" {
-    for_each = length(var.on_demand_throughput) > 0 ? [var.on_demand_throughput] : []
+    for_each = var.on_demand_throughput != null ? [var.on_demand_throughput] : []
 
     content {
       max_read_request_units  = try(on_demand_throughput.value.max_read_request_units, null)
@@ -285,11 +292,16 @@ resource "aws_dynamodb_table" "autoscaled" {
 
   lifecycle {
     ignore_changes = [read_capacity, write_capacity]
+
+    precondition {
+      condition     = var.billing_mode != "PROVISIONED" || alltrue([for index in var.global_secondary_indexes : index.read_capacity != null && index.write_capacity != null])
+      error_message = "global_secondary_indexes must set read_capacity and write_capacity when billing_mode is PROVISIONED."
+    }
   }
 }
 
 resource "aws_dynamodb_resource_policy" "autoscaled" {
-  count        = var.create_table && var.autoscaling_enabled && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && var.autoscaling_enabled && try(length(var.dynamodb_resource_policy), 0) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.autoscaled[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
@@ -386,11 +398,16 @@ resource "aws_dynamodb_table" "autoscaled_gsi_ignore" {
 
   lifecycle {
     ignore_changes = [global_secondary_index, read_capacity, write_capacity]
+
+    precondition {
+      condition     = var.billing_mode != "PROVISIONED" || alltrue([for index in var.global_secondary_indexes : index.read_capacity != null && index.write_capacity != null])
+      error_message = "global_secondary_indexes must set read_capacity and write_capacity when billing_mode is PROVISIONED."
+    }
   }
 }
 
 resource "aws_dynamodb_resource_policy" "autoscaled_gsi_ignore" {
-  count        = var.create_table && var.autoscaling_enabled && var.ignore_changes_global_secondary_index && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && var.autoscaling_enabled && var.ignore_changes_global_secondary_index && try(length(var.dynamodb_resource_policy), 0) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.autoscaled_gsi_ignore[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
