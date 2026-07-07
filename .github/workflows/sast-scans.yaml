@@ -43,6 +43,9 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: TFLint
+        uses: Home-Office-Digital/core-cloud-workflow-tflint-scan@main
+
   checkov-scan:
     uses: Home-Office-Digital/core-cloud-workflow-checkov-sast-scan/.github/workflows/checkov-scan-base.yaml@1.18.0
     with:
