@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This will p
 
 ### Changed
 
+- Harden module inputs with strongly typed table, index, import, and autoscaling objects. Optional object inputs now use `null` when unset.
 - Enable point-in-time recovery and server-side encryption by default. Deletion protection remains caller-controlled.
 
 ## [0.2.0] - 2026-02-20
