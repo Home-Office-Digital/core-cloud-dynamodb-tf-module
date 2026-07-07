@@ -146,7 +146,7 @@ resource "aws_dynamodb_table" "this" {
 }
 
 resource "aws_dynamodb_resource_policy" "this" {
-  count        = var.create_table && !var.autoscaling_enabled && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && !var.autoscaling_enabled && var.dynamodb_resource_policy != null && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.this[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
@@ -301,7 +301,7 @@ resource "aws_dynamodb_table" "autoscaled" {
 }
 
 resource "aws_dynamodb_resource_policy" "autoscaled" {
-  count        = var.create_table && var.autoscaling_enabled && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && var.autoscaling_enabled && var.dynamodb_resource_policy != null && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.autoscaled[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
@@ -407,7 +407,7 @@ resource "aws_dynamodb_table" "autoscaled_gsi_ignore" {
 }
 
 resource "aws_dynamodb_resource_policy" "autoscaled_gsi_ignore" {
-  count        = var.create_table && var.autoscaling_enabled && var.ignore_changes_global_secondary_index && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
+  count        = var.create_table && var.autoscaling_enabled && var.ignore_changes_global_secondary_index && var.dynamodb_resource_policy != null && length(var.dynamodb_resource_policy) > 0 ? 1 : 0
   resource_arn = aws_dynamodb_table.autoscaled_gsi_ignore[0].arn
   policy       = try(file(var.dynamodb_resource_policy), var.dynamodb_resource_policy)
 }
