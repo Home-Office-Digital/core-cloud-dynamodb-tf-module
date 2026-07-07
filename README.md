@@ -23,6 +23,7 @@ The repository includes Dependabot, Semantic Versioning workflows, Checkov scann
 <strong>---| [outputs.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/outputs.tf)</strong> - Contains output definitions for the module.  \
 <strong>---| [variables.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/variables.tf)</strong> - Contains module variable declarations.  \
 <strong>---| [versions.tf](https://github.com/Home-Office-Digital/core-cloud-dynamodb-tf-module/blob/main/versions.tf)</strong> - Contains Terraform and provider constraints.  \
+<strong>---| tests</strong> - Contains Terraform native tests covering contract, validation, and security behaviors.  \
 <strong>---| examples</strong> - Contains runnable examples for basic, autoscaling, and S3 import usage.  \
 <strong>---| wrappers</strong> - Contains the retained wrapper module surface.
 
@@ -38,7 +39,7 @@ terraform validate
 
 For changes to examples, run `terraform init -backend=false` and `terraform validate` from each affected example directory.
 
-Run `terraform test` when Terraform native tests are present or when adding behavior covered by tests.
+Run `terraform test` from the module root after changing validated module behavior or the `tests/` suite.
 
 ## Migration Notes
 
