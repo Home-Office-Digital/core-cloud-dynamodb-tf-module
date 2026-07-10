@@ -21,33 +21,15 @@ permissions:
 jobs:
   RunTerraformValidation:
     name: Run Terraform Validation
-    runs-on: ubuntu-latest
-    env:
-      TF_INPUT: "false"
-
-    steps:
-      - name: Clone the Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ~1.9.0
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      - name: Terraform Init (no backend)
-        run: terraform init -backend=false
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Test
-        run: terraform test -no-color
-
-      - name: TFLint
-        uses: Home-Office-Digital/core-cloud-workflow-tflint-scan@main
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/.github/workflows/standard-pipeline.yml@main
+    with:
+      working-directory: "."
+      use-backend: false
+      terraform-version: "1.15.0"
 
   checkov-scan:
     uses: Home-Office-Digital/core-cloud-workflow-checkov-sast-scan/.github/workflows/checkov-scan-base.yaml@1.18.0
