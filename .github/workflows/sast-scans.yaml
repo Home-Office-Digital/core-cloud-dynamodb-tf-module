@@ -46,10 +46,13 @@ jobs:
       - name: Terraform Test
         if: success() || failure()
         uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/actions/test@main
+        continue-on-error: true
         with:
           working-directory: .
-          sonar-host-url: ${{ secrets.sonar_host_url }}
-          sonar-token: ${{ secrets.sonar_token }}
+
+      - name: Terraform Test Fallback
+        if: success() || failure()
+        run: terraform test -no-color
 
       - name: TFLint
         uses: Home-Office-Digital/core-cloud-workflow-tflint-scan@main
