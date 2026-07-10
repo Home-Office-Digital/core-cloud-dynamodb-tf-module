@@ -30,6 +30,9 @@ jobs:
       working-directory: "."
       use-backend: false
       terraform-version: "1.15.0"
+    secrets:
+      SONAR_TOKEN: ${{ secrets.sonar_token }}
+      SONAR_HOST_URL: ${{ secrets.sonar_host_url }}
 
   checkov-scan:
     uses: Home-Office-Digital/core-cloud-workflow-checkov-sast-scan/.github/workflows/checkov-scan-base.yaml@1.18.0
@@ -38,5 +41,5 @@ jobs:
   sonarqube-scanner:
     uses: Home-Office-Digital/core-cloud-workflow-sonarqube-scan/.github/workflows/sonarqube-scan.yaml@1.1.8
     secrets:
-      sonar-token: ${{ secrets.sonar_token }}
-      sonar-host-url: ${{ secrets.sonar_host_url }}
+      sonar_token: ${{ secrets.sonar_token }}
+      sonar_host_url: ${{ secrets.sonar_host_url }}
